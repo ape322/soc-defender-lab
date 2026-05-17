@@ -1,0 +1,23 @@
+services:
+  vulnerable-backend:
+    image: hashicorp/http-echo
+    command: ["-listen=:8080", "-text", "Backend is alive"]
+    ports:
+      - "8080:8080"
+    
+  active-sentry:
+    container_name: active-sentry
+    network_mode: host
+    privileged: true
+    volumes:
+     - /var/log:/var/log
+    build: .
+   
+  Promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    network_mode: host
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - /var/log:/var/log  
+      - ./promtail-config.yml:/etc/promtail/config.yml  
