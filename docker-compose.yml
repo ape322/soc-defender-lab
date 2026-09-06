@@ -3,12 +3,14 @@ services:
     image: hashicorp/http-echo
     command: ["-listen=:8080", "-text", "Backend is alive"]
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     
   active-sentry:
     container_name: active-sentry
     network_mode: host
-    privileged: true
+    env_file: .env
+    cap_add:
+     - NET_ADMIN
     volumes:
      - /var/log:/var/log
     build: .

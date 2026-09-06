@@ -4,12 +4,20 @@ import urllib.request
 import json
 import os
 import re
+import sys
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1488632654864846992/LFyLjcbHTdjjl5hUh_DH4npvQRRZQ9Vvkg7Rz5blP-6RFq4xRpyE1bVKOdej0Ka-4biw"
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
+def get_webhook(url):
+    if url is None:
+        print("Error: DISCORD_WEBHOOK not set")
+        sys.exit(1)
+get_webhook(WEBHOOK_URL)
 ACTIVE_LOG = "/var/log/nginx/access.log"
 LEDGER_FILE = "/var/log/soc_threat_ledger.json"
 
 ATTACK_PATTERN = re.compile(r"(\.\./|\.env|phpmyadmin|wp-admin|<script>)", re.IGNORECASE)
+
+
 
 def load_ledger():
     if os.path.exists(LEDGER_FILE):
@@ -48,6 +56,17 @@ def send_alert(ip, trigger):
         urllib.request.urlopen(req)
     except Exception as e:
         print(f"[!] Webhook failure: {e}")
+
+def is_valid_ip(text):
+    numbers = text.split(".")
+    if len(numbers) != 4:
+        return False
+    for i in numbers:
+        if not i.isdigit():
+            return False
+        if int(i) > 255:
+            return False
+    return True
 
 print(f"[*] Live Sentry Active. Loaded {len(banned_ips_session)} persistent bans.")
 print(f"[*] Monitoring {ACTIVE_LOG} for malicious traffic...")
@@ -91,6 +110,8 @@ try:
         if len(parts) > 6:
             suspect_ip = parts[0]
             request_uri = parts[6]
+            if not is_valid_ip(suspect_ip):
+                continue
             
             match = ATTACK_PATTERN.search(request_uri)
             
@@ -101,11 +122,14 @@ try:
                     banned_ips_session.append(suspect_ip)
                     save_ledger(banned_ips_session)
                     
-                    cmd = f"sudo ufw insert 1 deny from {suspect_ip}"
-                    subprocess.run(cmd, shell=True, capture_output=True)
+                    cmd = ["/usr/sbin/iptables", "-I", "INPUT", "1", "-s", suspect_ip, "-j", "DROP"]
+                    result = subprocess.run(cmd, capture_output=True, text=True)
                     
-                    print(f"[+] DEFENSE ACTIVE: Banned {suspect_ip} for requesting {matched_string}")
-                    send_alert(suspect_ip, matched_string)
+                    if result.returncode != 0:
+                        print(f"[!] FIREWALL INJECTION FAILED: {result.stderr}")
+                    else:
+                        print(f"[+] DEFENSE ACTIVE: Banned {suspect_ip} for requesting {matched_string}")
+                        send_alert(suspect_ip, matched_string)
                 
 except Exception as e:
     print(f"[!] Critical System Error: {e}")
