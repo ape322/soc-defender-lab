@@ -12,8 +12,8 @@ clients:
 scrape_configs:
 - job_name: nginx-access
   static_configs:
-  - targets:
-      - localhost
+    - targets:
+        - localhost
     labels:
       job: nginx_access_logs
       host: ubuntu-server
