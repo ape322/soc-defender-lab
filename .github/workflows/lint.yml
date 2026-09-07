@@ -1,0 +1,25 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install linters
+        run: pip install yamllint ansible-lint
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint.yml .
+
+      - name: Run ansible-lint
+        run: ansible-lint ansible/site.yml
