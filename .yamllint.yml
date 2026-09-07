@@ -1,5 +1,7 @@
 ---
 extends: default
+ignore: |
+  ansible/secrets.yml
 rules:
   line-length:
     max: 160
