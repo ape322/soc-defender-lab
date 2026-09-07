@@ -11,9 +11,9 @@ services:
     network_mode: host
     env_file: .env
     cap_add:
-     - NET_ADMIN
+      - NET_ADMIN
     volumes:
-     - /var/log:/var/log
+      - /var/log:/var/log
     build: .
 
   Promtail:
