@@ -58,6 +58,7 @@
         content: "[]\n"
         dest: /var/log/soc_threat_ledger.json
         mode: '0640'
+        force: no
 
     - name: Tear down existing pipeline
       ansible.builtin.command: docker compose down
