@@ -40,9 +40,12 @@
 
     - name: Clone the SOC repo
       ansible.builtin.git:
-        repo: "https://{{ github_token }}@github.com/ape322/soc-defender-lab.git"
+        repo: "git@github.com:ape322/soc-defender-lab.git"
         dest: /opt/soc-defender-lab
         version: main
+        key_file: /home/max/.ssh/soc_deploy
+        accept_hostkey: yes
+        force: yes
 
     - name: Injest encrypted dis webhook
       ansible.builtin.copy:
