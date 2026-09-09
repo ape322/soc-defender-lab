@@ -1,23 +1,24 @@
 ---
 - name: Deploy SOC Defender Pipeline
   hosts: soc_nodes
-  become: yes
+  become: true
   vars_files:
     - secrets.yml
 
   tasks:
-    - name: install dependencies
+    - name: Install dependencies
       ansible.builtin.apt:
         name:
           - nginx
           - curl
           - git
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Reverse proxy Nginx
       ansible.builtin.copy:
         dest: /etc/nginx/sites-available/default
+        mode: '0644'
         content: |
           server {
               listen 80 default_server;
@@ -25,7 +26,7 @@
                   proxy_pass http://127.0.0.1:8080;
               }
           }
-      notify: restart nginx
+      notify: Restart nginx
 
     - name: Download docker installer
       ansible.builtin.get_url:
@@ -44,34 +45,33 @@
         dest: /opt/soc-defender-lab
         version: main
         key_file: /home/max/.ssh/soc_deploy
-        accept_hostkey: yes
-        force: yes
+        accept_hostkey: true
+        force: true
 
-    - name: Injest encrypted dis webhook
+    - name: Ingest encrypted Discord webhook
       ansible.builtin.copy:
         dest: /opt/soc-defender-lab/.env
         content: "DISCORD_WEBHOOK={{ discord_webhook }}\n"
         mode: '0600'
 
-    - name: Create a folder with logs
+    - name: Create a threat ledger file
       ansible.builtin.copy:
         content: "[]\n"
         dest: /var/log/soc_threat_ledger.json
+        owner: root
+        group: root
         mode: '0640'
-        force: no
+        force: false
 
-    - name: Tear down existing pipeline
-      ansible.builtin.command: docker compose down
-      args:
-        chdir: /opt/soc-defender-lab
-
-    - name: Docker compose
+    - name: Deploy pipeline with Docker Compose
       ansible.builtin.command: docker compose up -d --build
       args:
         chdir: /opt/soc-defender-lab
+      register: compose_up
+      changed_when: "'Started' in compose_up.stdout or 'Started' in compose_up.stderr"
 
   handlers:
-    - name: restart nginx
+    - name: Restart nginx
       ansible.builtin.service:
         name: nginx
         state: restarted
