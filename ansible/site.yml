@@ -41,11 +41,9 @@
 
     - name: Clone the SOC repo
       ansible.builtin.git:
-        repo: "git@github.com:ape322/soc-defender-lab.git"
+        repo: "https://github.com/ape322/soc-defender-lab"
         dest: /opt/soc-defender-lab
         version: main
-        key_file: /home/max/.ssh/soc_deploy
-        accept_hostkey: true
         force: true
 
     - name: Ingest encrypted Discord webhook

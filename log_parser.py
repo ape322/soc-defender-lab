@@ -68,6 +68,17 @@ def is_valid_ip(text):
             return False
     return True
 
+def ban_ip(ip):
+    result = subprocess.run(["/usr/sbin/iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"], capture_output=True)
+    if result.returncode == 0:
+        return True
+    else:
+        result = subprocess.run(["/usr/sbin/iptables", "-I", "INPUT", "1", "-s", ip, "-j", "DROP"], capture_output=True)
+        if result.returncode == 0:
+            return True
+        return False
+
+
 print(f"[*] Live Sentry Active. Loaded {len(banned_ips_session)} persistent bans.")
 print(f"[*] Monitoring {ACTIVE_LOG} for malicious traffic...")
 print("-" * 50)
@@ -77,6 +88,13 @@ try:
     current_ino = os.stat(ACTIVE_LOG).st_ino
     file = open(ACTIVE_LOG, 'r')
     file.seek(0, os.SEEK_END)
+
+    for ip in banned_ips_session:
+        result = ban_ip(ip)
+        if result != True:
+            print(f"[!] Banned ip loading failed: {ip}")
+            sys.exit(1)
+    
     
     while True:
         line = file.readline()
@@ -104,8 +122,9 @@ try:
 
             time.sleep(0.5)
             continue
-            
+
         parts = line.split()
+
         
         if len(parts) > 6:
             suspect_ip = parts[0]
