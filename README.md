@@ -102,3 +102,14 @@ The log parser checks for `DISCORD_WEBHOOK` at startup and exits if it's missing
 
    > [!NOTE]
    > nginx logs the real connection IP, so this likely wasn't exploitable in practice. But the pattern was unsafe, because log data is untrusted input.
+
+### The ledger task fix
+
+The task used to write `[]` on each deploy wiping all persitent bans. It got fixed with `force: false`, so if the ledger is already there - it won't be overwritten by another deploy. 
+
+### Restoring bans at startup
+
+The parser was loading the ledger but never reapplying or checking if the rule in the `iptables` exists. Fixed by checking `iptables` rules after each start, so they won't duplicate (unban command only deletes 1 copy of the rule) and reapplying them if needed. 
+
+  > [!NOTE]
+  > If the restore of bans fails, the tool will exit immediately and let you know which ip ban wasn't reapplied. Same kind of trade off as in webhook failure. 
