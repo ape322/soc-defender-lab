@@ -28,11 +28,17 @@
           }
       notify: Restart nginx
 
+    - name: Check if Docker is installed
+      ansible.builtin.stat:
+        path: /usr/bin/docker
+      register: docker_installed
+
     - name: Download docker installer
       ansible.builtin.get_url:
         url: "https://get.docker.com"
         dest: /tmp/get-docker.sh
         mode: '0755'
+      when: not docker_installed.stat.exists
 
     - name: Execute Docker installer
       ansible.builtin.command: /tmp/get-docker.sh
