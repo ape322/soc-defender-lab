@@ -53,6 +53,7 @@ services:
       - n8n-data:/home/node/.n8n
     environment:
       - GENERIC_TIMEZONE=Europe/Warsaw
+      - N8N_DIAGNOSTICS_ENABLED=false
     restart: unless-stopped
 
 volumes:
