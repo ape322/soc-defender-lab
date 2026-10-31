@@ -5,6 +5,7 @@ services:
     command: ["-listen=:8080", "-text", "Backend is alive"]
     ports:
       - "127.0.0.1:8080:8080"
+    restart: unless-stopped
 
   active-sentry:
     container_name: active-sentry
@@ -15,8 +16,9 @@ services:
     volumes:
       - /var/log:/var/log
     build: .
+    restart: unless-stopped
 
-  Promtail:
+  promtail:
     image: grafana/promtail:latest
     container_name: promtail
     network_mode: host
@@ -24,3 +26,4 @@ services:
     volumes:
       - /var/log:/var/log
       - ./promtail-config.yml:/etc/promtail/config.yml
+    restart: unless-stopped
