@@ -38,10 +38,15 @@ def save_ledger(banned_list):
 
 banned_ips_session = load_ledger()
 
-def send_alert(ip, trigger):
-    payload = {
-        "content": f"🚨 **[SOC DEFENSE SYSTEM]** Attack Intercepted.\n🛡️ **Action:** IP successfully banned at Priority 1.\n🎯 **Target IP:** `{ip}`\n🔍 **Trigger:** `{trigger}`"
-    }
+def send_alert(suspect_ip, matched_string):
+    if not is_allowlisted(suspect_ip):
+        payload = {
+            "content": f"🚨 **[SOC DEFENSE SYSTEM]** Attack Intercepted.\n🛡️ **Action:** IP successfully banned at Priority 1.\n🎯 **Target IP:** `{suspect_ip}`\n🔍 **Trigger:** `{matched_string}`"
+        }
+    else:
+        payload = {
+            "content": f"🚨 **[SOC DEFENSE SYSTEM]** Attack detected, not banned.\n🛡️ **Action:** IP is allowlisted.\n🎯 **Target IP:** `{suspect_ip}`\n🔍 **Trigger:** `{matched_string}`"
+        }
     
     req = urllib.request.Request(
         WEBHOOK_URL, 
@@ -78,6 +83,24 @@ def ban_ip(ip):
             return True
         return False
 
+ALLOW_LIST = os.getenv("ALLOWLIST", "")
+def load_allowlist(allow_list):
+    ips = allow_list.split(",")
+    result = set()
+    for ip in ips:
+        ip = ip.strip()
+        if len(ip) > 0:
+            if not is_valid_ip(ip):
+                print(f"[!] Error loading the allow list: {ip}")
+                sys.exit(1)
+            result.add(ip)
+    return result
+
+ALLOWLIST = load_allowlist(ALLOW_LIST)
+def is_allowlisted(ip):
+    if ip in ALLOWLIST or ip.startswith("127."):
+        return True
+    return False
 
 print(f"[*] Live Sentry Active. Loaded {len(banned_ips_session)} persistent bans.")
 print(f"[*] Monitoring {ACTIVE_LOG} for malicious traffic...")
@@ -90,10 +113,13 @@ try:
     file.seek(0, os.SEEK_END)
 
     for ip in banned_ips_session:
-        result = ban_ip(ip)
-        if result != True:
-            print(f"[!] Banned ip loading failed: {ip}")
-            sys.exit(1)
+        if not is_allowlisted(ip):
+            result = ban_ip(ip)
+            if result != True:
+                print(f"[!] Banned ip loading failed: {ip}")
+                sys.exit(1)
+        else: 
+            print(f"Skipped allowlisted ips: {ip}")
     
     
     while True:
@@ -136,8 +162,11 @@ try:
             
             if match:
                 matched_string = match.group(0)
+                if is_allowlisted(suspect_ip):
+                    print(f"[+] DEFENSE ACTIVE: {suspect_ip} is allowlisted, not banned, requesting {matched_string}")
+                    send_alert(suspect_ip, matched_string)
                 
-                if not suspect_ip.startswith("127.") and suspect_ip not in banned_ips_session:
+                elif suspect_ip not in banned_ips_session:
                     banned_ips_session.append(suspect_ip)
                     save_ledger(banned_ips_session)
                     
