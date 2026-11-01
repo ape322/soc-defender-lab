@@ -6,18 +6,18 @@ The VM stack (nginx reverse proxy, Docker, active-sentry, Promtail, Loki, Grafan
 
 ```mermaid
 flowchart LR
-    attacker[Client / attacker] -->|HTTP :80| nginx[nginx reverse proxy]
-    nginx -->|127.0.0.1:8080| backend[vulnerable-backend]
-    nginx -. access.log .-> sentry[active-sentry]
-    nginx -. access.log .-> promtail[promtail]
-    sentry -->|iptables DROP| fw[(VM firewall)]
-    sentry -->|instant alert| discord1[Discord #ips-alerts]
-    promtail --> loki[Loki]
-    loki --> grafana[Grafana]
-    n8n[n8n, hourly] -->|query last hour| loki
-    n8n -->|logs| ollama[Ollama qwen3:14b on host GPU]
-    ollama -->|summary| n8n
-    n8n --> discord2[Discord #ai-reports]
+    attacker["Client / attacker"] -->|"HTTP :80"| nginx["nginx reverse proxy"]
+    nginx -->|"127.0.0.1:8080"| backend["vulnerable-backend"]
+    nginx -.->|"access.log"| sentry["active-sentry"]
+    nginx -.->|"access.log"| promtail["promtail"]
+    sentry -->|"iptables DROP"| fw[("VM firewall")]
+    sentry -->|"instant alert"| discord1["Discord #ips-alerts"]
+    promtail --> loki["Loki"]
+    loki --> grafana["Grafana"]
+    n8n["n8n, hourly"] -->|"query last hour"| loki
+    n8n -->|"logs"| ollama["Ollama qwen3:14b on host GPU"]
+    ollama -->|"summary"| n8n
+    n8n --> discord2["Discord #ai-reports"]
 ```
 
 All services except Ollama run as containers on the Ubuntu VM and are deployed by Ansible. Ollama runs on the KVM host because that is where the GPU is.
