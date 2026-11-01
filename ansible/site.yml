@@ -2,6 +2,8 @@
 - name: Deploy SOC Defender Pipeline
   hosts: soc_nodes
   become: true
+  vars:
+    allow_list: "192.168.150.1"
   vars_files:
     - secrets.yml
 
@@ -52,10 +54,10 @@
         version: main
         force: true
 
-    - name: Ingest encrypted Discord webhook
+    - name: Ingest encrypted Discord webhook and ALLOWLIST
       ansible.builtin.copy:
         dest: /opt/soc-defender-lab/.env
-        content: "DISCORD_WEBHOOK={{ discord_webhook }}\n"
+        content: "DISCORD_WEBHOOK={{ discord_webhook }}\nALLOWLIST={{ allow_list }}\n"
         mode: '0600'
 
     - name: Create a threat ledger file
