@@ -28,7 +28,9 @@
                   proxy_pass http://127.0.0.1:8080;
               }
           }
-      notify: Restart nginx
+      notify:
+        - Check the nginx config
+        - Restart nginx
 
     - name: Check if Docker is installed
       ansible.builtin.stat:
@@ -77,6 +79,12 @@
       changed_when: "'Started' in compose_up.stdout or 'Started' in compose_up.stderr"
 
   handlers:
+    - name: Check the nginx config
+      ansible.builtin.command: nginx -t
+      become: true
+      register: nginx_config_check
+      changed_when: nginx_config_check.rc != 0
+
     - name: Restart nginx
       ansible.builtin.service:
         name: nginx
