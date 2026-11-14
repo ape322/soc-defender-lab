@@ -47,18 +47,17 @@ def send_alert(suspect_ip, matched_string):
         payload = {
             "content": f"🚨 **[SOC DEFENSE SYSTEM]** Attack detected, not banned.\n🛡️ **Action:** IP is allowlisted.\n🎯 **Target IP:** `{suspect_ip}`\n🔍 **Trigger:** `{matched_string}`"
         }
-    
-    req = urllib.request.Request(
-        WEBHOOK_URL, 
-        data=json.dumps(payload).encode('utf-8'), 
-        headers={
-            'Content-Type': 'application/json',
-            'User-Agent': 'SOC-Defender/1.3-Stable'
-        }
-    )
-    
+
     try:
-        urllib.request.urlopen(req)
+        req = urllib.request.Request(
+            WEBHOOK_URL,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Content-Type': 'application/json',
+                'User-Agent': 'SOC-Defender/1.3-Stable'
+            }
+        )
+        urllib.request.urlopen(req, timeout=5)
     except Exception as e:
         print(f"[!] Webhook failure: {e}")
 
