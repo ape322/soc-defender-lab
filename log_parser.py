@@ -107,7 +107,7 @@ print(f"[*] Monitoring {ACTIVE_LOG} for malicious traffic...")
 print("-" * 50)
 
 try:
-    # 1. Capture the initial inode (file ID) before we enter the loop
+    # 1. Capture the initial inode (file ID) before entering the loop
     current_ino = os.stat(ACTIVE_LOG).st_ino
     file = open(ACTIVE_LOG, 'r')
     file.seek(0, os.SEEK_END)
@@ -126,7 +126,6 @@ try:
         line = file.readline()
         
         if not line:
-            # 2. THE FIX: The Log Rotation Heartbeat
             try:
                 # Check if the file on disk has a different ID than the one we started with
                 if os.stat(ACTIVE_LOG).st_ino != current_ino:
@@ -137,12 +136,12 @@ try:
                     file = open(ACTIVE_LOG, 'r')
                     current_ino = os.stat(ACTIVE_LOG).st_ino
                     
-                    # Note: We do NOT use file.seek() here because we want to read 
-                    # the new file from the very beginning so we don't miss attacks.
+                    # Note: do NOT use file.seek() here because we want to read 
+                    # the new file from the very beginning so it don't miss attacks
                     continue
             except FileNotFoundError:
                 # If logrotate is in the split-second process of moving the file, 
-                # os.stat might fail. We just sleep and try again.
+                # os.stat might fail, just sleep and try again.
                 time.sleep(0.5)
                 continue
 
@@ -181,6 +180,7 @@ try:
                 
 except Exception as e:
     print(f"[!] Critical System Error: {e}")
+    sys.exit(1)
 finally:
     # Failsafe to release the file lock if the daemon is killed
     try:
